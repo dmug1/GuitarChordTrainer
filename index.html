@@ -58,7 +58,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 1.5rem;
-            position: relative; /* Allows absolute positioning for the timer */
+            position: relative;
         }
 
         #time-remaining {
@@ -71,7 +71,7 @@
             background: rgba(255, 71, 87, 0.15);
             padding: 4px 10px;
             border-radius: 6px;
-            display: none; /* Hidden until a timer is set */
+            display: none;
             font-weight: bold;
         }
 
@@ -88,7 +88,6 @@
             height: auto;
         }
 
-        /* Pulse animation on beat */
         .pulse {
             animation: pulse-animation 0.2s ease-out;
         }
@@ -159,7 +158,6 @@
             font-weight: bold;
         }
 
-        /* Modern Range Slider */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -201,7 +199,6 @@
         }
         option { color: white; }
 
-        /* Custom Input Styling */
         #custom-input-section {
             background: rgba(0, 0, 0, 0.2);
             padding: 1rem;
@@ -247,10 +244,12 @@
                         <option value="custom">✍️ Custom Input...</option>
                     </optgroup>
                     <optgroup label="Random Practice">
-                        <option value="all" selected>All Basic Chords</option>
+                        <option value="all" selected>All Basic & Barre Chords</option>
+                        <option value="major_minor">All Major & Minor Chords</option>
                         <option value="major">Basic Major Chords</option>
                         <option value="minor">Basic Minor Chords</option>
                         <option value="seventh">Basic Minor Seventh</option>
+                        <option value="barre">Basic Barre Chords</option>
                     </optgroup>
                     <optgroup label="Song Progressions (Sequential)">
                         <option value="prog_g_pop" data-seq="true">Pop 4-Chord (G - D - Em - C)</option>
@@ -261,10 +260,9 @@
                 </select>
             </div>
 
-            <!-- HIDDEN BY DEFAULT: Custom Input Section -->
             <div class="setting-group" id="custom-input-section" style="display: none;">
-                <label>Type chords (e.g., CDE, C, D, Am)</label>
-                <input type="text" id="custom-chords" placeholder="C D E..." autocomplete="off">
+                <label>Type chords (e.g., C, D, Am, F#m)</label>
+                <input type="text" id="custom-chords" placeholder="C D F#m..." autocomplete="off">
                 <label class="checkbox-label">
                     <input type="checkbox" id="custom-seq">
                     Play in exact order (Sequential)
@@ -308,6 +306,7 @@
     <script>
         // --- CHORD DICTIONARY & CATEGORIES ---
         const chordData = {
+            // Open Chords
             "C":  [[-1,0], [3,3], [2,2], [0,0], [1,1], [0,0]],
             "D":  [[-1,0], [-1,0], [0,0], [2,1], [3,3], [2,2]],
             "E":  [[0,0], [2,2], [2,3], [1,1], [0,0], [0,0]],
@@ -323,13 +322,22 @@
             "E7": [[0,0], [2,2], [0,0], [1,1], [0,0], [0,0]],
             "G7": [[3,3], [2,2], [0,0], [0,0], [0,0], [1,1]],
             "A7": [[-1,0], [0,0], [2,2], [0,0], [2,3], [0,0]],
-            "B7": [[-1,0], [2,2], [1,1], [2,3], [0,0], [2,4]]
+            "B7": [[-1,0], [2,2], [1,1], [2,3], [0,0], [2,4]],
+
+            // Barre Chords (Frets 1-5)
+            "F":   [[1,1], [3,3], [3,4], [2,2], [1,1], [1,1]],
+            "B":   [[-1,0], [2,1], [4,2], [4,3], [4,4], [2,1]],
+            "Bm":  [[-1,0], [2,1], [4,3], [4,4], [3,2], [2,1]],
+            "F#m": [[2,1], [4,3], [4,4], [2,1], [2,1], [2,1]],
+            "Cm":  [[-1,0], [3,1], [5,3], [5,4], [4,2], [3,1]],
+            "Gm":  [[3,1], [5,3], [5,4], [3,1], [3,1], [3,1]]
         };
 
         const categories = {
             major: ["C", "D", "E", "G", "A"],
             minor: ["Dm", "Em", "Am"],
             seventh: ["C7", "D7", "E7", "G7", "A7", "B7"],
+            barre: ["F", "B", "Bm", "F#m", "Cm", "Gm"],
             prog_g_pop: ["G", "D", "Em", "C"],
             prog_c_50s: ["C", "Am", "Dm", "G"],
             prog_a_rock: ["A", "D", "E"],
@@ -367,8 +375,8 @@
         
         // Auto-stop states
         let countdownId = null;
-        let timerDuration = 0; // Target duration in seconds
-        let timeRemaining = 0; // Current remaining time in seconds
+        let timerDuration = 0; 
+        let timeRemaining = 0; 
 
         // --- CUSTOM INPUT PARSER ---
         const allAvailableChords = Object.keys(chordData).sort((a, b) => b.length - a.length);
@@ -392,7 +400,10 @@
         function getActiveChords() {
             const selection = categorySelect.value;
             if (selection === "all") {
-                return [...categories.major, ...categories.minor, ...categories.seventh];
+                return [...categories.major, ...categories.minor, ...categories.seventh, ...categories.barre];
+            }
+            if (selection === "major_minor") {
+                return [...categories.major, ...categories.minor];
             }
             if (selection === "custom") {
                 return getParsedCustomChords();
@@ -513,7 +524,7 @@
 
         function startCountdown() {
             if (timerDuration > 0) {
-                if (timeRemaining <= 0) timeRemaining = timerDuration; // Refresh if starting from 0
+                if (timeRemaining <= 0) timeRemaining = timerDuration; 
                 updateTimerDisplay();
                 
                 countdownId = setInterval(() => {
@@ -521,7 +532,7 @@
                     updateTimerDisplay();
                     
                     if (timeRemaining <= 0) {
-                        stopApp(); // Auto-stop when time runs out
+                        stopApp(); 
                     }
                 }, 1000);
             }
@@ -546,7 +557,6 @@
             btnPause.disabled = true;
             btnStop.disabled = true;
             
-            // Reset countdown visually for the next run
             timeRemaining = timerDuration; 
             updateTimerDisplay();
         }
@@ -568,7 +578,7 @@
         btnPause.addEventListener('click', () => {
             isPlaying = false;
             clearInterval(timerId);
-            stopCountdown(); // Pause the countdown
+            stopCountdown(); 
             btnStart.disabled = false;
             btnPause.disabled = true;
         });
@@ -601,13 +611,9 @@
         });
 
         timerSelect.addEventListener('change', () => {
-            timerDuration = parseInt(timerSelect.value) * 60; // Convert minutes to seconds
+            timerDuration = parseInt(timerSelect.value) * 60; 
             timeRemaining = timerDuration;
-            
-            // If we change the timer while it's paused or stopped, update UI
             updateTimerDisplay();
-            
-            // If changing while playing, we need to restart the interval logic
             if (isPlaying) {
                 stopCountdown();
                 startCountdown();
